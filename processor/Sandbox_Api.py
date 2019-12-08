@@ -17,68 +17,20 @@ class SandboxApi:
 
     _authorization_code = ""
 
-    #oauth/authorize?client_id=d2463025f42ca58f&redirect_uri=http://localhost:3005&response_type=code&state=approved
-    #Code: bd511468979f630bb3f3f1701a58c297
 
-    def get_code(self):
-        url = config.sandbox_url + config.auth_url
-        print(url)
-        r = requests.get(url)
-        redirect = str(r.url)
-        print(url)
-        # code = redirect.split("?code=")[1].split("&")[0]
-        #
-        # with open("config.py", "r") as configFile:
-        #     data = configFile.read()
-        # configFile.close()
-        #
-        # data = data.split("\n")
-        # newData = ""
-        #
-        # for item in data:
-        #     if (item.split("=")[0] == "code"):
-        #         newData = newData + "code=\"" + str(access_token) + "\"\n"
-        #     else:
-        #         newData = newData + item + "\n"
-        #
-        # with open("config.py", "w") as configFile:
-        #     configFile.write(newData)
-        # configFile.close()
-        #
-        # return code
-
-
-    def get_authorization(self):
+    def get_authorization(self, id, secret, code):
         url = "http://apm.sandboxpresales.fidorfzco.com/oauth/token"
 
         querystring = {"grant_type": "authorization_code",
-                       "client_id": "d2463025f42ca58f",
-                       "client_secret": "9d1adff976b667eb946f2248d170cc95",
-                       "code": config.code,
+                       "client_id": id,
+                       "client_secret": secret,
+                       "code": code,
                        "redirect_uri": "http://localhost:3005"}
 
         headers = {}
 
         response = requests.request("POST", url, headers=headers, params=querystring)
         access_token = str(response.text).split("\"")[3]
-
-        with open("config.py", "r") as configFile:
-            data = configFile.read()
-        configFile.close()
-
-        data = data.split("\n")
-        newData = ""
-
-        for item in data:
-            if (item.split("=")[0] == "access_token"):
-                newData = newData + "access_token=\"" + str(access_token) + "\"\n"
-            else:
-                newData = newData + item + "\n"
-
-        with open("config.py", "w") as configFile:
-            configFile.write(newData)
-        configFile.close()
-
         return access_token
 
     def get_customers(self):
@@ -95,11 +47,11 @@ class SandboxApi:
 
         return response.text
 
-    def get_accounts(self, auth):
+    def get_accounts(self, token):
         url = config.api_url + "/fidor_banking/accounts"
 
         headers = {
-            'Authorization': "Bearer " + str(auth),
+            'Authorization': "Bearer " + str(token),
             'Content-Type': "application/json",
             'Accept': "application/vnd.fidor.de; version=1,text/json"
         }
@@ -121,19 +73,19 @@ class SandboxApi:
 
         return response.text
 
-    def post_internal_transfer(self):
+    def post_internal_transfer(self, token, origin, receiver, external, amount, subject):
         url = config.api_url + "/fidor_banking/internal_transfers"
 
-        payload = "{\n  \"account_id\": \"19394998\",\n  \"receiver\": \"67152831\",\n  \"external_uid\": \"9ur64fgdg355iu8\",\n  \"amount\": \"1000\",\n  \"subject\": \"my share of yesterday evening\"\n}"
+        payload = {"account_id": origin, "receiver": receiver, "external_uid": external, "amount": amount, "subject": subject}
+        payloadRaw = json.dumps(payload)
         headers = {
-            'Authorization': "Bearer " + config.access_token,
+            'Authorization': "Bearer " + token,
             'Content-Type': "application/json",
             'Accept': "application/vnd.fidor.de; version=1,text/json"
         }
 
-        response = requests.request("POST", url, data=payload, headers=headers)
-
-        return response.text
+        response = requests.request("POST", url, data=payloadRaw, headers=headers)
+        return response
 
     def get_internal_transfer(self):
         url = config.api_url + "/fidor_banking/internal_transfers"
@@ -161,12 +113,12 @@ class SandboxApi:
 
         return response.text
 
-    def post_external_transfer(self):
+    def post_external_transfer(self, token):
         url = config.api_url + "/fidor_banking/sepa_credit_transfers"
 
         payload = "{\n  \"account_id\" : \"19394998\",\n  \"external_uid\" : \"666ifgftdfffrsdtsfgjuh\",\n  \"remote_iban\": \"GB33BUKB20201555555555\",\n  \"remote_bic\": \"FDDODEMMXXX\",\n  \"remote_name\" : \"test test\",\n  \"amount\" : 100,\n  \"subject\" : \"Here is your dirty money\"\n}"
         headers = {
-            'Authorization': "Bearer " + config.access_token,
+            'Authorization': "Bearer " + token,
             'Content-Type': "application/json",
             'Accept': "application/vnd.fidor.de; version=1,text/json"
         }
@@ -240,7 +192,8 @@ class SandboxApi:
 
         return response.text
 
-api = SandboxApi()
+#api = SandboxApi()
+#print(api.post_internal_transfer("1uEWCen5oSC3ZGRdI5VMfL:3cSJtMTziW6LQn9a7wmM6t", "90923694", "54012762", "883151gdg883183", 10, ""))
 #print(api.get_code())
 #print(api.get_authorization())
 #print(api.get_accounts())
